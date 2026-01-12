@@ -19,8 +19,8 @@ class DeviceShellView(PermissionRequiredMixin, View):
     def get(self, request, pk: int):
         device = get_object_or_404(Device, pk=pk)
         
-        # 从自定义字段 management_IP 获取 IP 地址
-        ip = device.custom_field_data.get("management_IP")
+        # 从自定义字段获取 IP 地址，兼容 management_IP 和 managment_IP
+        ip = device.custom_field_data.get("management_IP") or device.custom_field_data.get("managment_IP")
         
         ssh_username = request.GET.get("SSH_USERNAME") or request.GET.get("ssh_username") or ""
         ssh_password = request.GET.get("SSH_PASSWORD") or request.GET.get("ssh_password") or ""
