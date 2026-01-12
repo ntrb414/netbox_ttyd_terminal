@@ -11,9 +11,12 @@ class DeviceTerminalButton(PluginTemplateExtension):
         obj = self.context.get("object") or self.context.get("record")
         if not obj:
             return ""
-        ip_obj = getattr(obj, "primary_ip4", None) or getattr(obj, "primary_ip6", None)
-        if not ip_obj:
+        
+        # 检查自定义字段 managment_IP 是否有值
+        mgmt_ip = obj.custom_field_data.get("managment_IP")
+        if not mgmt_ip:
             return ""
+            
         return self.render(
             "netbox_ttyd_terminal/inc/terminal_button.html",
             {

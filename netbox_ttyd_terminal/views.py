@@ -10,7 +10,7 @@ from dcim.models import Device
 
 def get_ttyd_base_url() -> str:
     cfg = getattr(settings, "PLUGINS_CONFIG", {}).get("netbox_ttyd_terminal", {}) or {}
-    return cfg.get("ttyd_base_url", "http://localhost:7681")
+    return cfg.get("ttyd_base_url", "http://localhost:8008")
 
 
 class DeviceShellView(PermissionRequiredMixin, View):
@@ -18,8 +18,10 @@ class DeviceShellView(PermissionRequiredMixin, View):
 
     def get(self, request, pk: int):
         device = get_object_or_404(Device, pk=pk)
-        ip_obj = getattr(device, "primary_ip4", None) or getattr(device, "primary_ip6", None)
-        ip = str(ip_obj.address.ip) if ip_obj else None
+        
+        # 从自定义字段 managment_IP 获取 IP 地址
+        ip = device.custom_field_data.get("managment_IP")
+        
         ssh_username = request.GET.get("SSH_USERNAME") or request.GET.get("ssh_username") or ""
         ssh_password = request.GET.get("SSH_PASSWORD") or request.GET.get("ssh_password") or ""
         base_url = get_ttyd_base_url()
