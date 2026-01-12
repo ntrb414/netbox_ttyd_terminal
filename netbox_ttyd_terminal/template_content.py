@@ -12,8 +12,8 @@ class DeviceTerminalButton(PluginTemplateExtension):
         if not obj:
             return ""
         
-        # 检查自定义字段 managment_IP 是否有值
-        mgmt_ip = obj.custom_field_data.get("managment_IP")
+        # 检查自定义字段 management_IP 是否有值
+        mgmt_ip = obj.custom_field_data.get("management_IP")
         if not mgmt_ip:
             return ""
             
