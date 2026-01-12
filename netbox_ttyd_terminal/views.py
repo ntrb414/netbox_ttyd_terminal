@@ -27,12 +27,16 @@ class DeviceShellView(PermissionRequiredMixin, View):
         base_url = get_ttyd_base_url()
         ttyd_url = base_url
         if ip and ssh_username:
-            query = urlencode(
-                {
-                    "arg": f"{ssh_username}@{ip}",
-                }
-            )
-            # 确保 base_url 和 query 之间有斜杠，以便 ttyd 正确解析参数
+            # 使用多个 arg 参数来传递 ssh 命令的组成部分
+            # 这样可以避免 @ 符号在某些环境下解析失败的问题
+            params = [
+                ('arg', '-l'),
+                ('arg', str(ssh_username)),
+                ('arg', str(ip)),
+            ]
+            query = urlencode(params)
+            
+            # 确保 base_url 和 query 之间有斜杠
             base_url_fixed = base_url.rstrip('/')
             ttyd_url = f"{base_url_fixed}/?{query}"
         return render(
