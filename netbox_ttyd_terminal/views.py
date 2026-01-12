@@ -32,7 +32,9 @@ class DeviceShellView(PermissionRequiredMixin, View):
                     "arg": f"{ssh_username}@{ip}",
                 }
             )
-            ttyd_url = f"{base_url}?{query}"
+            # 确保 base_url 和 query 之间有斜杠，以便 ttyd 正确解析参数
+            base_url_fixed = base_url.rstrip('/')
+            ttyd_url = f"{base_url_fixed}/?{query}"
         return render(
             request,
             "netbox_ttyd_terminal/device_shell.html",
