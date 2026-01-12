@@ -1,0 +1,31 @@
+{% load static %}
+{% load helpers %}
+<button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#ttyd-terminal-modal">
+  Terminal
+</button>
+<div class="modal fade" id="ttyd-terminal-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="get" action="{% url 'plugins:netbox_ttyd_terminal:device_shell' pk=device.pk %}">
+        <div class="modal-header">
+          <h5 class="modal-title">Terminal</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">SSH_USERNAME</label>
+            <input type="text" name="SSH_USERNAME" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">SSH_PASSWORD</label>
+            <input type="password" name="SSH_PASSWORD" class="form-control">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Commit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+

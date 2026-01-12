@@ -1,0 +1,2 @@
+recursive-include netbox_ttyd_terminal/templates *
+
