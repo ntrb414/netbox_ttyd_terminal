@@ -88,9 +88,12 @@ class DeviceTerminalButton(PluginTemplateExtension):
         obj = self.context.get("object") or self.context.get("record")
         if not obj:
             return ""
-        ip_obj = getattr(obj, "primary_ip4", None) or getattr(obj, "primary_ip6", None)
-        if not ip_obj:
+        
+        # 检查自定义字段 management_IP 是否有值
+        mgmt_ip = obj.custom_field_data.get("management_IP")
+        if not mgmt_ip:
             return ""
+            
         return self.render(
             "netbox_ttyd_terminal/inc/terminal_button.html",
             {
@@ -105,7 +108,7 @@ template_extensions = [DeviceTerminalButton]
 主要作用：
 
 - 限定只对 `dcim.device` 模型生效。
-- 尝试获取设备的管理 IP（`primary_ip4` 或 `primary_ip6`），若没有则隐藏按钮。
+- 尝试从自定义字段 `management_IP` 中获取管理 IP，若没有则隐藏按钮。
 - 渲染 `inc/terminal_button.html` 模板，将当前 `device` 传入模板上下文。
 
 ### 3. 路由与视图：`urls.py` 与 `views.py`
@@ -127,8 +130,8 @@ urlpatterns = [
 
 - 检查用户是否有 `dcim.view_device` 权限。
 - 根据 `pk` 获取 NetBox 中的 `Device` 对象。
-- 提取其管理 IP（primary_ip4/primary_ip6）。
-- 从 `GET` 参数中读取 `SSH_USERNAME` / `SSH_PASSWORD`（本示例不在服务端存储密码）。
+- 提取自定义字段 `management_IP`。
+- 从 `GET` 参数中读取 `SSH_USERNAME` / `SSH_PASSWORD`。
 - 从插件配置中获取 `ttyd_base_url`，并构造真实的 TTYD 访问地址：
 
 ```python
@@ -144,7 +147,7 @@ from dcim.models import Device
 
 def get_ttyd_base_url() -> str:
     cfg = getattr(settings, "PLUGINS_CONFIG", {}).get("netbox_ttyd_terminal", {}) or {}
-    return cfg.get("ttyd_base_url", "http://localhost:7681")
+    return cfg.get("ttyd_base_url", "http://localhost:8008")
 
 
 class DeviceShellView(PermissionRequiredMixin, View):
@@ -152,19 +155,27 @@ class DeviceShellView(PermissionRequiredMixin, View):
 
     def get(self, request, pk: int):
         device = get_object_or_404(Device, pk=pk)
-        ip_obj = getattr(device, "primary_ip4", None) or getattr(device, "primary_ip6", None)
-        ip = str(ip_obj.address.ip) if ip_obj else None
+        
+        # 从自定义字段 management_IP 获取 IP 地址
+        ip = device.custom_field_data.get("management_IP")
+        
         ssh_username = request.GET.get("SSH_USERNAME") or request.GET.get("ssh_username") or ""
         ssh_password = request.GET.get("SSH_PASSWORD") or request.GET.get("ssh_password") or ""
         base_url = get_ttyd_base_url()
         ttyd_url = base_url
         if ip and ssh_username:
-            query = urlencode(
-                {
-                    "arg": f"{ssh_username}@{ip}",
-                }
-            )
-            ttyd_url = f"{base_url}?{query}"
+            # 使用多个 arg 参数来传递 ssh 命令的组成部分
+            # 这样可以避免 @ 符号在某些环境下解析失败的问题
+            params = [
+                ('arg', '-l'),
+                ('arg', str(ssh_username)),
+                ('arg', str(ip)),
+            ]
+            query = urlencode(params)
+            
+            # 确保 base_url 和 query 之间有斜杠
+            base_url_fixed = base_url.rstrip('/')
+            ttyd_url = f"{base_url_fixed}/?{query}"
         return render(
             request,
             "netbox_ttyd_terminal/device_shell.html",
@@ -180,13 +191,13 @@ class DeviceShellView(PermissionRequiredMixin, View):
 在默认情况下，如果 TTYD 以 `ttyd ssh` 启动，则访问：
 
 ```text
-http://TTyD_HOST:7681/?arg=admin@10.0.0.1
+http://TTyD_HOST:8008/?arg=-l&arg=admin&arg=10.0.0.1
 ```
 
 会在服务器端执行：
 
 ```bash
-ssh admin@10.0.0.1
+ssh -l admin 10.0.0.1
 ```
 
 从而在浏览器中呈现一个真实的 SSH 终端。
