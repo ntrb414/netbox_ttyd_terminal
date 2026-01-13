@@ -6,8 +6,7 @@
 <div class="modal fade" id="ttyd-terminal-modal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form method="post" action="{% url 'plugins:netbox_ttyd_terminal:device_shell' pk=device.pk %}">
-        {% csrf_token %}
+      <form method="get" action="{% url 'plugins:netbox_ttyd_terminal:device_shell' pk=device.pk %}">
         <div class="modal-header">
           <h5 class="modal-title">Terminal</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

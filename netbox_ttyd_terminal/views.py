@@ -12,18 +12,17 @@ def get_ttyd_base_url() -> str:
     cfg = getattr(settings, "PLUGINS_CONFIG", {}).get("netbox_ttyd_terminal", {}) or {}
     return cfg.get("ttyd_base_url", "http://localhost:8008")
 
-
 class DeviceShellView(PermissionRequiredMixin, View):
     permission_required = "dcim.view_device"
 
-    def post(self, request, pk: int):
+    def get(self, request, pk: int):
         device = get_object_or_404(Device, pk=pk)
         
         # 从自定义字段 management_IP 获取 IP 地址
         ip = device.custom_field_data.get("management_IP")
         
-        ssh_username = request.POST.get("SSH_USERNAME") or request.POST.get("ssh_username") or ""
-        ssh_password = request.POST.get("SSH_PASSWORD") or request.POST.get("ssh_password") or ""
+        ssh_username = request.GET.get("SSH_USERNAME") or request.GET.get("ssh_username") or ""
+        ssh_password = request.GET.get("SSH_PASSWORD") or request.GET.get("ssh_password") or ""
         base_url = get_ttyd_base_url()
         ttyd_url = base_url
         if ip and ssh_username:
